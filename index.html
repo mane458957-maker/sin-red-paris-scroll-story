@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#101010">
+  <title>SIN RED PARIS — La signature reste</title>
+  <link rel="stylesheet" href="https://unpkg.com/lenis@1.3.27/dist/lenis.css">
+  <style>
+    :root{color-scheme:dark;--bg:#101010;--red:#ed172f;--paper:#f1eeea;--muted:#b2ada7;--line:#ffffff2b}
+    *{box-sizing:border-box}
+    html{scroll-behavior:auto;background:var(--bg)}
+    body{margin:0;background:var(--bg);color:var(--paper);font-family:Arial,Helvetica,sans-serif;overflow-x:hidden}
+    a{color:inherit;text-decoration:none}
+    .scroll-line{position:fixed;z-index:20;left:0;top:0;height:2px;width:100%;pointer-events:none;background:#ffffff20}
+    .scroll-line span{display:block;width:0;height:100%;background:var(--red);transform-origin:left center}
+    .topbar{position:fixed;z-index:15;inset:0 0 auto;height:66px;padding:0 5vw;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #ffffff18;background:linear-gradient(#101010d9,#10101000);font-size:9px;letter-spacing:.18em;text-transform:uppercase}
+    .brand{color:var(--red);font-size:24px;font-weight:900;letter-spacing:.09em}
+    .topnav{display:flex;gap:30px;color:#d0cbc5}
+    .top-meta{color:#b4aea7}
+    .story{position:relative;isolation:isolate;background:radial-gradient(ellipse at 65% 47%,#292725 0,#171716 44%,#101010 76%)}
+    .stage{position:sticky;z-index:0;top:0;height:100vh;height:100svh;margin-bottom:-100svh;overflow:hidden;pointer-events:none}
+    .stage:before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 68% 57%,#514d481c 0,transparent 42%),linear-gradient(90deg,#101010e8 0,transparent 40%,#10101014 100%)}
+    .stage:after{content:"";position:absolute;inset:auto 0 0;height:30vh;background:linear-gradient(transparent,#101010cc);pointer-events:none}
+    #sin-canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+    .model-status{position:absolute;z-index:2;left:50%;top:50%;transform:translate(-50%,-50%);color:#c9c2ba;font-size:9px;letter-spacing:.18em;text-transform:uppercase;transition:opacity .35s}
+    .model-status.hidden{opacity:0}
+    .stage-mark{position:absolute;z-index:2;right:5vw;top:92px;color:#d4d0ca;font-size:9px;letter-spacing:.2em;text-transform:uppercase}
+    .stage-color{position:absolute;z-index:2;right:5vw;bottom:46px;color:#fff;font-size:10px;letter-spacing:.2em;text-transform:uppercase;transition:opacity .25s}
+    .chapters{position:relative;z-index:2;pointer-events:none}
+    .chapter{height:100vh;height:100svh;min-height:650px;padding:95px 6vw 70px;display:flex;align-items:center;position:relative}
+    .copy{width:min(38vw,460px);max-width:100%;pointer-events:auto}
+    .step{color:var(--red);font-size:9px;letter-spacing:.22em;text-transform:uppercase;display:flex;align-items:center;gap:11px}
+    .step:before{content:"";width:22px;height:1px;background:var(--red)}
+    h1,h2{font-weight:500;letter-spacing:-.065em;line-height:.96;margin:19px 0 18px;font-size:clamp(42px,6.2vw,82px)}
+    h1 em,h2 em{font-style:normal;color:var(--red)}
+    .chapter p{max-width:350px;margin:0;color:#c2bdb7;font-size:13px;line-height:1.75}
+    .scroll-cue{display:flex;align-items:center;gap:12px;margin-top:28px;color:#d0cbc5;font-size:9px;letter-spacing:.17em;text-transform:uppercase}
+    .scroll-cue span{width:25px;height:1px;background:var(--red);transform-origin:left;animation:cue 1.8s ease-in-out infinite}
+    @keyframes cue{0%,100%{transform:scaleX(.45);opacity:.55}55%{transform:scaleX(1);opacity:1}}
+    .palette{display:flex;gap:8px;margin-top:23px;align-items:center}
+    .palette i{display:block;width:15px;height:15px;border-radius:50%;border:1px solid #ffffff44;opacity:.42;transform:scale(.86);transition:opacity .25s,transform .25s,box-shadow .25s}
+    .palette i.active{opacity:1;transform:scale(1.13);box-shadow:0 0 0 2px #101010,0 0 0 3px #f0ece7}
+    .palette-name{margin-left:5px;color:#e5e0da;font-size:9px;letter-spacing:.15em;text-transform:uppercase;min-width:70px}
+    .sequence{position:absolute;right:5vw;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:11px;pointer-events:none}
+    .sequence i{width:4px;height:4px;border-radius:50%;background:#777;transition:background .3s,transform .3s}
+    .sequence i.active{background:var(--red);transform:scale(1.7)}
+    .chapter--right{justify-content:flex-end}
+    .chapter--right .copy{margin-right:3vw}
+    .chapter--center{justify-content:center;text-align:center}
+    .chapter--center .copy{width:min(500px,80vw)}
+    .chapter--center .step{justify-content:center}
+    .chapter--center p{margin-inline:auto}
+    .chapter--center .scroll-cue{justify-content:center}
+    .end{position:relative;z-index:3;min-height:64vh;padding:75px 6vw 86px;background:linear-gradient(180deg,#101010,#080808);border-top:1px solid #ffffff18;text-align:center}
+    .end-kicker{font-size:9px;letter-spacing:.22em;color:#c7c0b8;text-transform:uppercase}
+    .strap-logo{margin:16px auto 22px;color:transparent;font-size:clamp(100px,21vw,240px);font-weight:900;line-height:.8;letter-spacing:-.09em;width:max-content;max-width:100%;background:repeating-linear-gradient(0deg,#fa1b32 0,#fa1b32 5px,#bd1024 5px,#bd1024 7px,#f8273c 8px);background-clip:text;-webkit-background-clip:text;filter:drop-shadow(0 14px 17px #000c)}
+    .end p{margin:0 auto 25px;color:#c9c4be;font-size:11px;letter-spacing:.17em;text-transform:uppercase}
+    .cta{display:inline-flex;align-items:center;gap:22px;padding:16px 19px;background:var(--red);color:white;font-size:9px;letter-spacing:.16em;text-transform:uppercase;transition:background .2s,transform .2s}
+    .cta:hover{background:#ff3045;transform:translateY(-2px)}
+    .foot{padding:18px 5vw;display:flex;justify-content:space-between;color:#89837d;font-size:8px;letter-spacing:.15em;text-transform:uppercase;border-top:1px solid #ffffff15}
+    @media(max-width:760px){.topbar{height:58px;padding:0 20px}.topnav{display:none}.top-meta{font-size:8px}.stage-mark{top:76px;right:20px;font-size:8px}.stage-color{right:20px;bottom:29vh}.chapter{min-height:600px;padding:74px 22px 55px;align-items:flex-end}.copy{width:min(100%,470px);padding:20px 0 5px}.chapter h1,.chapter h2{font-size:clamp(40px,11vw,68px);margin:16px 0}.chapter p{font-size:12px;max-width:320px}.chapter--right{justify-content:flex-start}.chapter--right .copy{margin-right:0}.chapter--center{align-items:flex-end;text-align:left}.chapter--center .copy{width:100%}.chapter--center .step{justify-content:flex-start}.chapter--center p{margin-inline:0}.chapter--center .scroll-cue{justify-content:flex-start}.stage:before{background:linear-gradient(180deg,#10101042 5%,transparent 35%,#10101088 62%,#101010f2 100%)}.stage:after{height:42vh}.sequence{right:20px;top:47%}.palette{margin-top:15px}.palette i{width:13px;height:13px}.end{padding:62px 20px 70px;min-height:55vh}.foot{padding:17px 20px;gap:15px;flex-wrap:wrap}}
+    @media(max-width:390px){.chapter{padding-inline:18px}.chapter h1,.chapter h2{font-size:40px}.chapter p{font-size:11px}.stage-color{bottom:31vh}.palette{gap:6px}}
+    @media(prefers-reduced-motion:reduce){.scroll-cue span{animation:none}.palette i,.sequence i{transition:none}.cta{transition:none}}
+  </style>
+  <script type="importmap">
+    {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.187.0/examples/jsm/"}}
+  </script>
+  <script src="https://unpkg.com/lenis@1.3.27/dist/lenis.min.js"></script>
+  <script type="module" src="sin-scroll.js"></script>
+</head>
+<body>
+  <div class="scroll-line" aria-hidden="true"><span id="scroll-progress"></span></div>
+  <header class="topbar"><a class="brand" href="#top" aria-label="SIN Red Paris">SIN</a><nav class="topnav"><a href="#story">La signature</a><a href="https://sinredparis.com/collections/casquette">Les casquettes</a></nav><span class="top-meta">Paris · Depuis toujours rouge</span></header>
+  <main id="top">
+    <section class="story" id="story" aria-label="La signature SIN en cinq scènes pilotées par le scroll">
+      <div class="stage"><canvas id="sin-canvas" aria-label="Casquette SIN en trois dimensions, animée par le défilement"></canvas><div class="model-status" id="model-status" role="status">Chargement du modèle 3D…</div><div class="stage-mark" id="stage-mark">SIN RED PARIS · 01 / 05</div><div class="stage-color" id="stage-color">BLANC</div></div>
+      <div class="chapters">
+        <article class="chapter">
+          <div class="copy"><div class="step">01 · La silhouette</div><h1>Une casquette.<br><em>Un détail.</em></h1><p>Elle prend forme, pivote lentement et révèle sa signature à l’arrière. Fais défiler pour suivre son mouvement.</p><div class="scroll-cue">Fais défiler<span></span></div></div>
+        </article>
+        <article class="chapter chapter--right">
+          <div class="copy"><div class="step">02 · Les couleurs</div><h2>Six couleurs.<br><em>Une même SIN.</em></h2><p>La casquette tourne et change de couleur. Le rouge, lui, ne bouge pas.</p><div class="palette" id="palette" aria-label="Blanc, gris, bleu, rose, orange et bordeaux"><i style="background:#f4f1ec"></i><i style="background:#85888d"></i><i style="background:#1947b8"></i><i style="background:#e6a8b8"></i><i style="background:#ef6228"></i><i style="background:#68152d"></i><span class="palette-name" id="palette-name">Blanc</span></div></div>
+        </article>
+        <article class="chapter">
+          <div class="copy"><div class="step">03 · Le détail</div><h2>La languette<br><em>se détache.</em></h2><p>Un geste suspendu pour isoler le détail qui relie toutes les couleurs.</p></div>
+        </article>
+        <article class="chapter chapter--center">
+          <div class="copy"><div class="step">04 · La signature</div><h2>Elle dessine<br><em>SIN.</em></h2><p>La languette devient notre marque de fabrique. Trois bandes rouges composent le nom, une par une.</p></div>
+          <div class="sequence" id="sequence" aria-label="Progression de l’animation"><i></i><i></i><i></i><i></i><i></i></div>
+        </article>
+        <article class="chapter chapter--right">
+          <div class="copy"><div class="step">05 · Le retour</div><h2>La signature<br><em>reprend sa place.</em></h2><p>Les bandes se rejoignent. La languette rouge revient à l’arrière de la casquette.</p><div class="scroll-cue">Encore un peu<span></span></div></div>
+        </article>
+      </div>
+    </section>
+    <section class="end" id="collection"><div class="end-kicker">Six couleurs · Une languette · SIN</div><div class="strap-logo" aria-label="SIN, dessiné avec des languettes rouges">SIN</div><p>La marque de fabrique, toujours à sa place.</p><a class="cta" href="https://sinredparis.com/collections/casquette">Découvrir les casquettes <span aria-hidden="true">↗</span></a></section>
+  </main>
+  <footer class="foot"><span>SIN RED PARIS</span><span>La casquette signature</span><span>© SIN RED PARIS</span></footer>
+</body>
+</html>
