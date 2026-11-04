@@ -24,10 +24,10 @@
     .stage-index{position:absolute;z-index:5;right:5vw;top:100px;color:#56534e;font-size:9px;letter-spacing:.2em;text-transform:uppercase}
     .hero-signature{position:absolute;z-index:4;top:11vh;left:50%;display:flex;gap:.01em;transform:translateX(-50%);font-size:clamp(76px,12vw,156px);font-weight:900;line-height:.8;letter-spacing:-.11em;color:transparent;background:repeating-linear-gradient(0deg,#fa1b32 0,#fa1b32 5px,#bd1024 5px,#bd1024 7px,#f8273c 8px);background-clip:text;-webkit-background-clip:text;filter:drop-shadow(0 8px 14px #55101c20);pointer-events:none;will-change:transform,opacity}
     .hero-signature span{display:inline-block;will-change:transform}
-    .photo-frame{position:absolute;z-index:2;left:57%;top:53%;width:min(92vw,112vh,1100px);aspect-ratio:1;transform:translate(-50%,-50%);perspective:1500px;transform-style:preserve-3d;will-change:transform}
+    .photo-frame{position:absolute;z-index:2;left:57%;top:53%;width:min(92vw,112vh,1100px);aspect-ratio:1;transform:translate(-50%,-50%);perspective:1200px;transform-style:preserve-3d;will-change:transform}.cap-spin{position:absolute;inset:0;transform-style:preserve-3d;will-change:transform}
     .cap-photo{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;mix-blend-mode:multiply;backface-visibility:hidden;will-change:transform,opacity}
     .cap-front{opacity:1;z-index:1}
-    .cap-back{opacity:0;z-index:2}.cap-color{opacity:0;z-index:3}
+    .cap-back{opacity:1;z-index:2;transform:rotateY(180deg)}.cap-color{opacity:0;z-index:3}
     .color-wash{position:absolute;z-index:3;inset:0;opacity:0;mix-blend-mode:multiply;clip-path:polygon(40% 31%,51% 32%,62% 37%,70% 44%,76% 52%,78% 59%,72% 63%,59% 66%,46% 69%,35% 67%,27% 64%,18% 62%,15% 58%,17% 53%,22% 46%,28% 39%,34% 35%);pointer-events:none;will-change:opacity,background-color}
     .tab-flight{position:absolute;z-index:4;left:13.8%;top:57.2%;width:25.45%;height:15.45%;object-fit:fill;opacity:0;mix-blend-mode:multiply;filter:drop-shadow(0 6px 7px #15141225);will-change:transform,opacity}
     .scroll-label{position:absolute;z-index:5;left:5vw;bottom:5vh;display:flex;align-items:center;gap:11px;color:#55514c;font-size:9px;letter-spacing:.18em;text-transform:uppercase}
@@ -89,7 +89,7 @@
     }
     @media(prefers-reduced-motion:reduce){.scroll-label i{animation:none}.cta{transition:none}}
   </style>
-  <script type="module" src="sin-scroll.js?v=7"></script>
+  <script type="module" src="sin-scroll.js?v=8"></script>
 </head>
 <body>
   <div class="progress" aria-hidden="true"><span id="scroll-progress"></span></div>
@@ -99,11 +99,13 @@
       <div class="stage">
         <div class="hero-signature" id="hero-signature" aria-label="Logo SIN"><span>S</span><span>I</span><span>N</span></div>
         <div class="photo-frame" id="photo-frame">
-          <img class="cap-photo cap-front" id="cap-front" src="assets/sin-cap-front.jpg" alt="Casquette SIN blanche vue de face">
-          <img class="cap-photo cap-back" id="cap-back" src="assets/sin-cap-back.jpg" alt="Casquette SIN blanche vue de dos, avec sa languette rouge">
-          <img class="cap-photo cap-color" id="cap-color-a" alt="Casquette SIN dans un autre coloris">
-          <img class="cap-photo cap-color" id="cap-color-b" alt="Casquette SIN dans un autre coloris">
-          <div class="color-wash" id="color-wash" aria-hidden="true"></div>
+          <div class="cap-spin" id="cap-spin">
+            <img class="cap-photo cap-front" id="cap-front" src="assets/sin-cap-front.jpg" alt="Casquette SIN blanche vue de face">
+            <img class="cap-photo cap-back" id="cap-back" src="assets/sin-cap-back.jpg" alt="Casquette SIN blanche vue de dos, avec sa languette rouge">
+            <img class="cap-photo cap-color" id="cap-color-a" alt="Casquette SIN dans un autre coloris">
+            <img class="cap-photo cap-color" id="cap-color-b" alt="Casquette SIN dans un autre coloris">
+            <div class="color-wash" id="color-wash" aria-hidden="true"></div>
+          </div>
           <img class="tab-flight" id="tab-flight" src="assets/sin-tab-source.jpg" alt="">
         </div>
         <div class="stage-index" id="stage-index">SIN RED PARIS · 01 / 05</div>
