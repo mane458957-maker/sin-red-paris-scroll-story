@@ -13,15 +13,15 @@ const logo = $('#hero-signature');
 const logoLetters = [...logo.querySelectorAll('span')];
 const tab = $('#tab-flight');
 const wash = $('#color-wash');
-const gallery = $('#color-gallery');
+const colorA = $('#cap-color-a');
+const colorB = $('#cap-color-b');
 const palette = [...$('#palette').children];
 const label = $('#color-label');
 const index = $('#stage-index');
 const cue = $('#scroll-label');
 const progress = $('#scroll-progress');
 
-// Cut the red woven strap directly from the supplied high resolution photo.
-// Canvas preserves the photographed weave and drops only the pale background.
+// Preserve the photographed red weave and buckle as the logo's falling tab.
 const source = new Image();
 source.src = 'assets/sin-tab-source.jpg';
 source.onload = () => {
@@ -43,14 +43,19 @@ source.onload = () => {
 };
 
 const colors = [
-  { name: 'BLANC', hex: '#f3f1ed' },
-  { name: 'GRIS', hex: '#85888d' },
-  { name: 'BLEU', hex: '#1947b8' },
-  { name: 'ROSE', hex: '#e6a8b8' },
-  { name: 'ORANGE', hex: '#ef6228' },
-  { name: 'BORDEAUX', hex: '#68152d' },
+  { name: 'BLANC', src: 'assets/sin-cap-front.jpg' },
+  { name: 'GRIS', src: 'assets/colors/sin-grey.jpg' },
+  { name: 'BLEU', src: 'assets/colors/sin-blue.jpg' },
+  { name: 'ROSE', src: 'assets/colors/sin-pink.jpg' },
+  { name: 'NUDE ROSE', src: 'assets/colors/sin-nude-rose.jpg' },
+  { name: 'ORANGE', src: 'assets/colors/sin-orange.jpg' },
+  { name: 'BORDEAUX', src: 'assets/colors/sin-bordeaux.jpg' },
+  { name: 'ROUGE', src: 'assets/colors/sin-red.jpg' },
+  { name: 'NOIR', src: 'assets/colors/sin-black.jpg' },
+  { name: 'VERT', src: 'assets/colors/sin-green.jpg' },
+  { name: 'MARRON', src: 'assets/colors/sin-brown.jpg' },
 ];
-
+let loadedPair = '';
 let scheduled = false;
 let lastProgress = -1;
 function draw() {
@@ -66,12 +71,12 @@ function draw() {
   const reveal = smooth(0.30, 0.48, p);
   const logoDrop = smooth(0.10, 0.35, p);
   const tabIn = smooth(0.23, 0.42, p);
-  const colorsIn = smooth(0.52, 0.64, p);
-  const colorsOut = 1 - smooth(0.90, 0.99, p);
+  const colorsIn = smooth(0.54, 0.62, p);
+  const colorsOut = 1 - smooth(0.94, 0.995, p);
 
-  front.style.opacity = String(1 - reveal);
+  front.style.opacity = String((1 - reveal) * (1 - colorsIn));
   front.style.transform = `rotateY(${-turn * 74}deg) scale(${1 - turn * 0.04})`;
-  back.style.opacity = String(reveal);
+  back.style.opacity = String(reveal * (1 - colorsIn));
   back.style.transform = `rotateY(${(1 - turn) * 74}deg) scale(${0.96 + turn * 0.04})`;
   frame.style.transform = `translate(-50%,-50%) translateY(${Math.sin(p * Math.PI) * -12}px) scale(${1 + turn * 0.025})`;
 
@@ -86,26 +91,30 @@ function draw() {
   tab.style.transform = `translateY(${(1 - tabIn) * -44}vh) rotate(${(1 - tabIn) * -7}deg)`;
   tab.style.filter = `drop-shadow(0 ${6 + tabIn * 3}px ${7 + tabIn * 2}px #15141225)`;
 
-  const colorIndex = clamp((p - 0.56) / 0.30) * (colors.length - 1);
-  const left = Math.floor(colorIndex);
-  const mix = colorIndex - left;
-  const currentColor = colors[Math.min(left, colors.length - 1)];
-  const nextColor = colors[Math.min(left + 1, colors.length - 1)];
-  // A tint on the cap silhouette keeps the studio background and red tab clean.
-  wash.style.backgroundColor = mix < 0.5 ? currentColor.hex : nextColor.hex;
-  wash.style.opacity = '0'; // Keep the actual white fabric untouched; show real color photos below.
+  const colorPosition = clamp((p - 0.61) / 0.31) * (colors.length - 1);
+  const current = Math.floor(colorPosition);
+  const next = Math.min(current + 1, colors.length - 1);
+  const blend = colorPosition - current;
+  const pairKey = `${current}:${next}`;
+  if (pairKey !== loadedPair) {
+    loadedPair = pairKey;
+    colorA.src = colors[current].src;
+    colorB.src = colors[next].src;
+  }
+  const colorFade = colorsIn * colorsOut;
+  colorA.style.opacity = String(colorFade * (1 - blend));
+  colorB.style.opacity = String(colorFade * blend);
+  wash.style.opacity = '0';
 
-  gallery.style.opacity = String(colorsIn * colorsOut * 0.92);
-  gallery.style.transform = `translateY(${(1 - colorsIn) * 20}px)`;
-  palette.forEach((dot, i) => dot.classList.toggle('active', i === Math.round(colorIndex)));
-  label.textContent = `${colors[Math.round(colorIndex)].name} · ${String(Math.round(colorIndex) + 1).padStart(2, '0')} / 06`;
-  label.style.opacity = String(colorsIn * colorsOut);
-  $('#palette').style.opacity = String(colorsIn * colorsOut);
+  const selected = Math.round(colorPosition);
+  palette.forEach((dot, i) => dot.classList.toggle('active', i === selected));
+  label.textContent = `${colors[selected].name} · ${String(selected + 1).padStart(2, '0')} / ${colors.length}`;
+  label.style.opacity = String(colorFade);
+  $('#palette').style.opacity = String(colorFade);
   cue.style.opacity = String(1 - smooth(0.55, 0.69, p));
   index.textContent = `SIN RED PARIS · ${String(Math.min(5, Math.floor(p * 5) + 1)).padStart(2, '0')} / 05`;
   progress.style.transform = `scaleX(${p})`;
 }
-
 function requestDraw() {
   if (!scheduled) {
     scheduled = true;
