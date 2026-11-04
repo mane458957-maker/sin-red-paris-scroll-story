@@ -1,407 +1,117 @@
-import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-
-const canvas = document.getElementById('sin-canvas');
-const story = document.getElementById('story');
-const progressBar = document.getElementById('scroll-progress');
-const stageMark = document.getElementById('stage-mark');
-const stageColor = document.getElementById('stage-color');
-const paletteName = document.getElementById('palette-name');
-const modelStatus = document.getElementById('model-status');
-const paletteDots = [...document.querySelectorAll('#palette i')];
-const sequenceDots = [...document.querySelectorAll('#sequence i')];
-const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
-const clamp = THREE.MathUtils.clamp;
-const smooth = (a, b, x) => {
-  const t = clamp((x - a) / (b - a), 0, 1);
+const $ = (selector) => document.querySelector(selector);
+const clamp = (value, min = 0, max = 1) => Math.min(max, Math.max(min, value));
+const smooth = (a, b, value) => {
+  const t = clamp((value - a) / (b - a));
   return t * t * (3 - 2 * t);
 };
-const lerp = THREE.MathUtils.lerp;
 
-const renderer = new THREE.WebGLRenderer({
-  canvas,
-  alpha: true,
-  antialias: true,
-  powerPreference: 'high-performance',
-});
-renderer.outputColorSpace = THREE.SRGBColorSpace;
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.18;
-renderer.setClearColor(0x000000, 0);
-renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.7));
+const story = $('.story');
+const frame = $('#photo-frame');
+const front = $('#cap-front');
+const back = $('#cap-back');
+const logo = $('#hero-signature');
+const logoLetters = [...logo.querySelectorAll('span')];
+const tab = $('#tab-flight');
+const wash = $('#color-wash');
+const gallery = $('#color-gallery');
+const palette = [...$('#palette').children];
+const label = $('#color-label');
+const index = $('#stage-index');
+const cue = $('#scroll-label');
+const progress = $('#scroll-progress');
 
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 40);
-const ambient = new THREE.HemisphereLight(0xece7e0, 0x29231f, 2.0);
-scene.add(ambient);
-const keyLight = new THREE.DirectionalLight(0xfff6ee, 3.1);
-keyLight.position.set(-2.8, 3.2, 4.5);
-scene.add(keyLight);
-const edgeLight = new THREE.DirectionalLight(0xd9dce6, 1.7);
-edgeLight.position.set(3.4, 1.5, -2.8);
-scene.add(edgeLight);
-const redBounce = new THREE.PointLight(0xef1730, 1.25, 5, 2);
-redBounce.position.set(-1.8, -0.4, 1.5);
-scene.add(redBounce);
+// Cut the red woven strap directly from the supplied high resolution photo.
+// Canvas preserves the photographed weave and drops only the pale background.
+const source = new Image();
+source.src = 'assets/sin-tab-source.jpg';
+source.onload = () => {
+  const canvas = document.createElement('canvas');
+  canvas.width = source.naturalWidth;
+  canvas.height = source.naturalHeight;
+  const context = canvas.getContext('2d', { willReadFrequently: true });
+  context.drawImage(source, 0, 0);
+  const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
+  const data = pixels.data;
+  for (let i = 0; i < data.length; i += 4) {
+    const r = data[i], g = data[i + 1], b = data[i + 2];
+    const redThread = r > g * 1.20 && r > b * 1.12 && r - g > 20;
+    const hardware = r < 76 && g < 76 && b < 80;
+    data[i + 3] = redThread || hardware ? 255 : 0;
+  }
+  context.putImageData(pixels, 0, 0);
+  tab.src = canvas.toDataURL('image/png');
+};
 
-const capRoot = new THREE.Group();
-scene.add(capRoot);
-const letterRoot = new THREE.Group();
-scene.add(letterRoot);
-
-const colorStops = [
-  { name: 'Blanc', hex: '#f3f1ed' },
-  { name: 'Gris', hex: '#85888d' },
-  { name: 'Bleu', hex: '#1947b8' },
-  { name: 'Rose', hex: '#e6a8b8' },
-  { name: 'Orange', hex: '#ef6228' },
-  { name: 'Bordeaux', hex: '#68152d' },
+const colors = [
+  { name: 'BLANC', hex: '#f3f1ed' },
+  { name: 'GRIS', hex: '#85888d' },
+  { name: 'BLEU', hex: '#1947b8' },
+  { name: 'ROSE', hex: '#e6a8b8' },
+  { name: 'ORANGE', hex: '#ef6228' },
+  { name: 'BORDEAUX', hex: '#68152d' },
 ];
-const tintColors = colorStops.map(({ hex }) => new THREE.Color(hex));
-const activeTint = new THREE.Color('#f3f1ed');
-const renderedTint = new THREE.Color('#f3f1ed');
-const colorMix = new THREE.Color();
-let materialShaders = [];
-let baseScale = 1;
-let currentColorIndex = -1;
-let targetProgress = 0;
-let currentProgress = 0;
-let lastFrame = performance.now();
-let modelReady = false;
-let strapGroup;
-let strapMaterial;
-let letterMeshes = [];
 
-function addFabricShader(material) {
-  // Keep the cap opaque. Enabling transparency for this single large mesh
-  // makes Three.js sort its overlapping fabric panels incorrectly.
-  material.transparent = false;
-  material.depthWrite = true;
-  material.onBeforeCompile = (shader) => {
-    shader.uniforms.sinCapTint = { value: new THREE.Color('#f3f1ed') };
-    shader.uniforms.sinStrapOut = { value: 0 };
-    shader.fragmentShader = shader.fragmentShader.replace(
-      '#include <common>',
-      '#include <common>\nuniform vec3 sinCapTint;\nuniform float sinStrapOut;'
-    );
-    shader.fragmentShader = shader.fragmentShader.replace(
-      '#include <map_fragment>',
-      `#include <map_fragment>
-       float sinIsStrap = step(0.18, diffuseColor.r)
-         * step(diffuseColor.g * 1.30, diffuseColor.r)
-         * step(diffuseColor.b * 1.27, diffuseColor.r);
-       diffuseColor.rgb *= mix(sinCapTint, vec3(1.0), sinIsStrap);
-       if (sinStrapOut > 0.97 && sinIsStrap > 0.5) discard;`
-    );
-    material.userData.sinShader = shader;
-    materialShaders.push(shader);
-  };
-  material.customProgramCacheKey = () => 'sin-scroll-cap-tint-and-tab-v1';
-  material.needsUpdate = true;
-}
+let scheduled = false;
+let lastProgress = -1;
+function draw() {
+  scheduled = false;
+  if (!story) return;
+  const rect = story.getBoundingClientRect();
+  const scrollable = Math.max(1, story.offsetHeight - innerHeight);
+  const p = clamp(-rect.top / scrollable);
+  if (Math.abs(p - lastProgress) < 0.001) return;
+  lastProgress = p;
 
-function makeFabricTexture() {
-  const weave = document.createElement('canvas');
-  weave.width = 256;
-  weave.height = 96;
-  const context = weave.getContext('2d');
-  context.fillStyle = '#e90f2a';
-  context.fillRect(0, 0, weave.width, weave.height);
-  for (let x = 0; x < weave.width; x += 3) {
-    context.fillStyle = x % 6 === 0 ? '#f83a4b' : '#c90d24';
-    context.fillRect(x, 0, 1, weave.height);
-  }
-  for (let y = 0; y < weave.height; y += 3) {
-    context.fillStyle = y % 6 === 0 ? '#fa3144' : '#d50d26';
-    context.fillRect(0, y, weave.width, 1);
-  }
-  context.fillStyle = '#ff4958';
-  context.fillRect(0, 3, weave.width, 2);
-  context.fillStyle = '#950b1d';
-  context.fillRect(0, weave.height - 5, weave.width, 2);
-  const texture = new THREE.CanvasTexture(weave);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.wrapS = THREE.RepeatWrapping;
-  texture.wrapT = THREE.RepeatWrapping;
-  texture.repeat.set(3, 1);
-  texture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
-  texture.needsUpdate = true;
-  return texture;
-}
+  const turn = smooth(0.13, 0.47, p);
+  const reveal = smooth(0.30, 0.48, p);
+  const logoDrop = smooth(0.10, 0.35, p);
+  const tabIn = smooth(0.23, 0.42, p);
+  const colorsIn = smooth(0.52, 0.64, p);
+  const colorsOut = 1 - smooth(0.90, 0.99, p);
 
-const strapTexture = makeFabricTexture();
+  front.style.opacity = String(1 - reveal);
+  front.style.transform = `rotateY(${-turn * 74}deg) scale(${1 - turn * 0.04})`;
+  back.style.opacity = String(reveal);
+  back.style.transform = `rotateY(${(1 - turn) * 74}deg) scale(${0.96 + turn * 0.04})`;
+  frame.style.transform = `translate(-50%,-50%) translateY(${Math.sin(p * Math.PI) * -12}px) scale(${1 + turn * 0.025})`;
 
-function ribbonGeometry(points, width, across = 'up') {
-  const curve = new THREE.CatmullRomCurve3(
-    points.map(([x, y, z]) => new THREE.Vector3(x, y, z)),
-    false,
-    'centripetal',
-    0.35
-  );
-  const segments = 42;
-  const vertices = [];
-  const uvs = [];
-  const indices = [];
-  const up = new THREE.Vector3(0, 1, 0);
-  for (let i = 0; i <= segments; i++) {
-    const t = i / segments;
-    const point = curve.getPoint(t);
-    const tangent = curve.getTangent(t).normalize();
-    let side;
-    if (across === 'xy') {
-      side = new THREE.Vector3(-tangent.y, tangent.x, 0).normalize();
-    } else {
-      side = up.clone().addScaledVector(tangent, -up.dot(tangent)).normalize();
-    }
-    const half = side.multiplyScalar(width * 0.5);
-    vertices.push(
-      point.x - half.x, point.y - half.y, point.z - half.z,
-      point.x + half.x, point.y + half.y, point.z + half.z
-    );
-    uvs.push(t * 3.5, 0, t * 3.5, 1);
-    if (i < segments) {
-      const a = i * 2;
-      const b = a + 1;
-      const c = a + 2;
-      const d = a + 3;
-      indices.push(a, c, b, b, c, d);
-    }
-  }
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-  geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
-  geometry.setIndex(indices);
-  geometry.computeVertexNormals();
-  return geometry;
-}
-
-function addSignatureBand() {
-  strapGroup = new THREE.Group();
-  const geometry = ribbonGeometry([
-    [-0.42, -0.15, -0.72],
-    [-0.27, -0.19, -0.81],
-    [-0.08, -0.205, -0.85],
-    [0.12, -0.205, -0.85],
-    [0.31, -0.18, -0.80],
-    [0.43, -0.15, -0.71],
-  ], 0.105, 'up');
-  strapMaterial = new THREE.MeshStandardMaterial({
-    map: strapTexture,
-    roughness: 0.9,
-    metalness: 0,
-    side: THREE.DoubleSide,
-    transparent: true,
-    opacity: 0,
-    depthWrite: false,
+  logo.style.opacity = String(1 - smooth(0.19, 0.35, p));
+  logo.style.transform = `translateX(-50%) translateY(${logoDrop * 92}px) scaleY(${1 - logoDrop * 0.72})`;
+  logoLetters.forEach((letter, i) => {
+    const drift = (i - 1) * 16;
+    letter.style.transform = `translate(${drift * logoDrop}px,${logoDrop * (i === 1 ? 5 : -2)}px) scaleX(${1 - logoDrop * 0.18})`;
   });
-  const band = new THREE.Mesh(geometry, strapMaterial);
-  band.frustumCulled = false;
-  strapGroup.add(band);
-  capRoot.add(strapGroup);
+
+  tab.style.opacity = String(tabIn * (p < 0.48 ? 1 : 0));
+  tab.style.transform = `translateY(${(1 - tabIn) * -44}vh) rotate(${(1 - tabIn) * -7}deg)`;
+  tab.style.filter = `drop-shadow(0 ${6 + tabIn * 3}px ${7 + tabIn * 2}px #15141225)`;
+
+  const colorIndex = clamp((p - 0.56) / 0.30) * (colors.length - 1);
+  const left = Math.floor(colorIndex);
+  const mix = colorIndex - left;
+  const currentColor = colors[Math.min(left, colors.length - 1)];
+  const nextColor = colors[Math.min(left + 1, colors.length - 1)];
+  // A tint on the cap silhouette keeps the studio background and red tab clean.
+  wash.style.backgroundColor = mix < 0.5 ? currentColor.hex : nextColor.hex;
+  wash.style.opacity = String(colorsIn * colorsOut * (p > 0.57 ? 0.42 : 0));
+
+  gallery.style.opacity = String(colorsIn * colorsOut * 0.92);
+  gallery.style.transform = `translateY(${(1 - colorsIn) * 20}px)`;
+  palette.forEach((dot, i) => dot.classList.toggle('active', i === Math.round(colorIndex)));
+  label.textContent = `${colors[Math.round(colorIndex)].name} · ${String(Math.round(colorIndex) + 1).padStart(2, '0')} / 06`;
+  label.style.opacity = String(colorsIn * colorsOut);
+  $('#palette').style.opacity = String(colorsIn * colorsOut);
+  cue.style.opacity = String(1 - smooth(0.55, 0.69, p));
+  index.textContent = `SIN RED PARIS · ${String(Math.min(5, Math.floor(p * 5) + 1)).padStart(2, '0')} / 05`;
+  progress.style.transform = `scaleX(${p})`;
 }
 
-function addLetterBand(path, order) {
-  const material = new THREE.MeshStandardMaterial({
-    map: strapTexture,
-    roughness: 0.9,
-    metalness: 0,
-    side: THREE.DoubleSide,
-    transparent: true,
-    opacity: 0,
-    depthWrite: false,
-  });
-  const mesh = new THREE.Mesh(ribbonGeometry(path, 0.12, 'xy'), material);
-  mesh.frustumCulled = false;
-  mesh.userData.order = order;
-  letterRoot.add(mesh);
-  letterMeshes.push(mesh);
-}
-
-function addSINBands() {
-  addLetterBand([
-    [-0.93, 0.28, 0], [-0.58, 0.30, 0], [-0.37, 0.19, 0],
-    [-0.45, 0.04, 0], [-0.82, -0.02, 0], [-0.96, -0.17, 0],
-    [-0.80, -0.31, 0], [-0.36, -0.30, 0],
-  ], 0);
-  addLetterBand([
-    [-0.12, 0.30, 0], [0.20, 0.30, 0], [0.04, 0.30, 0],
-    [0.04, -0.30, 0], [-0.12, -0.30, 0], [0.20, -0.30, 0],
-  ], 1);
-  addLetterBand([
-    [0.42, -0.30, 0], [0.42, 0.30, 0], [0.88, -0.30, 0], [0.88, 0.30, 0],
-  ], 2);
-  letterRoot.position.set(-0.25, 0.0, 0.94);
-  letterRoot.scale.setScalar(0.84);
-}
-
-function updateColor(progress) {
-  let colorPosition = 0;
-  if (progress < 0.18) {
-    activeTint.copy(tintColors[0]);
-  } else if (progress < 0.40) {
-    colorPosition = clamp((progress - 0.18) / 0.22, 0, 1) * (tintColors.length - 1);
-    const from = Math.floor(colorPosition);
-    const to = Math.min(tintColors.length - 1, from + 1);
-    const weight = smooth(from, Math.min(tintColors.length - 1, from + 1), colorPosition);
-    activeTint.copy(tintColors[from]).lerp(tintColors[to], weight);
-  } else if (progress < 0.45) {
-    const returnToWhite = smooth(0.40, 0.45, progress);
-    activeTint.copy(tintColors[tintColors.length - 1]).lerp(tintColors[0], returnToWhite);
-  } else {
-    activeTint.copy(tintColors[0]);
+function requestDraw() {
+  if (!scheduled) {
+    scheduled = true;
+    requestAnimationFrame(draw);
   }
-  const nearest = progress >= 0.18 && progress < 0.40
-    ? Math.min(tintColors.length - 1, Math.round(colorPosition))
-    : 0;
-  if (nearest !== currentColorIndex) {
-    currentColorIndex = nearest;
-    const label = colorStops[nearest].name;
-    stageColor.textContent = label.toUpperCase();
-    paletteName.textContent = label;
-    paletteDots.forEach((dot, index) => dot.classList.toggle('active', index === nearest));
-  }
-  renderedTint.lerp(activeTint, 0.18);
-  for (const shader of materialShaders) shader.uniforms.sinCapTint.value.copy(renderedTint);
 }
-
-function updateStory(progress) {
-  const turnToBack = progress < 0.18
-    ? smooth(0, 0.18, progress)
-    : progress < 0.42
-      ? 1 + smooth(0.18, 0.42, progress) * 2
-      : progress < 0.80
-        ? 3
-        : 3 + smooth(0.80, 1, progress);
-  // Start on the front, turn around for the color reveal, then return to front.
-  capRoot.rotation.y = turnToBack * Math.PI;
-  capRoot.rotation.x = Math.sin(progress * Math.PI * 2) * 0.025;
-
-  const isMobile = window.innerWidth < 760;
-  const logoMove = smooth(0.48, 0.67, progress) * (1 - smooth(0.84, 0.95, progress));
-  capRoot.position.x = (isMobile ? 0 : 0.34) + logoMove * (isMobile ? 0.08 : 0.70);
-  capRoot.position.y = -0.03 - logoMove * 0.04;
-  capRoot.scale.setScalar(baseScale * (1 - logoMove * (isMobile ? 0.16 : 0.28)));
-
-  const detach = smooth(0.42, 0.54, progress) * (1 - smooth(0.84, 0.95, progress));
-  for (const shader of materialShaders) shader.uniforms.sinStrapOut.value = detach;
-  const logoForm = smooth(0.57, 0.65, progress) * (1 - smooth(0.84, 0.92, progress));
-  const strapVisible = clamp(detach * (1 - smooth(0.56, 0.64, progress)) + smooth(0.84, 0.91, progress) * (1 - smooth(0.96, 1, progress)), 0, 1);
-  if (strapGroup) {
-    // Pull the red tab out from the back of the cap and sweep it toward the
-    // signature. The parent cap is facing away here, so local +X travels left.
-    strapGroup.position.set(0.72 * detach, 0.10 * detach, -0.55 * detach);
-    strapGroup.rotation.set(0.10 * detach, -0.18 * detach, -0.20 * detach);
-    strapMaterial.opacity = strapVisible;
-  }
-  letterRoot.position.x = (isMobile ? -0.32 : -0.70) + logoMove * 0.05;
-  letterRoot.position.z = 0.95 + logoForm * 0.08;
-  letterRoot.scale.setScalar((isMobile ? 0.48 : 0.62) + logoForm * 0.03);
-  for (const mesh of letterMeshes) {
-    const n = mesh.userData.order;
-    const arrive = smooth(0.58 + n * 0.025, 0.64 + n * 0.025, progress);
-    mesh.material.opacity = arrive * (1 - smooth(0.84, 0.92, progress));
-  }
-
-  const chapter = Math.min(4, Math.round(progress * 4));
-  stageMark.textContent = `SIN RED PARIS · 0${chapter + 1} / 05`;
-  sequenceDots.forEach((dot, index) => dot.classList.toggle('active', index === chapter));
-  progressBar.style.transform = `scaleX(${progress.toFixed(4)})`;
-  updateColor(progress);
-}
-
-function resize() {
-  const width = Math.max(1, window.innerWidth);
-  const height = Math.max(1, window.innerHeight);
-  renderer.setSize(width, height, false);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, window.innerWidth < 760 ? 1.35 : 1.7));
-  camera.aspect = width / height;
-  camera.fov = width < 760 ? 38 : 34;
-  camera.position.set(width < 760 ? 0 : 0.18, 0.02, width < 760 ? 3.7 : 3.35);
-  camera.lookAt(width < 760 ? 0 : 0.12, 0, 0);
-  camera.updateProjectionMatrix();
-}
-
-function loadCap() {
-  const loader = new GLTFLoader();
-  // Resolve from this module so the GLB still loads when the page is served
-  // from a nested preview route (instead of assuming the document is at /).
-  const capUrl = new URL('./sin-cap-optimized.glb', import.meta.url).href;
-  loader.load(
-    capUrl,
-    (gltf) => {
-      const model = gltf.scene;
-      const bounds = new THREE.Box3().setFromObject(model);
-      const center = bounds.getCenter(new THREE.Vector3());
-      const size = bounds.getSize(new THREE.Vector3());
-      model.position.sub(center);
-      baseScale = 1.55 / Math.max(size.x, size.y, size.z);
-      model.traverse((object) => {
-        if (!object.isMesh) return;
-        object.castShadow = true;
-        object.receiveShadow = true;
-        const mats = Array.isArray(object.material) ? object.material : [object.material];
-        for (const material of mats) addFabricShader(material);
-      });
-      capRoot.add(model);
-      capRoot.scale.setScalar(baseScale);
-      capRoot.position.set(window.innerWidth < 760 ? 0 : 0.34, -0.03, 0);
-      addSignatureBand();
-      addSINBands();
-      modelReady = true;
-      modelStatus.classList.add('hidden');
-      resize();
-      updateStory(targetProgress);
-    },
-    undefined,
-    (error) => {
-      console.error('SIN cap model could not load', error);
-      modelStatus.textContent = 'Le modèle 3D n’a pas pu se charger';
-      canvas.setAttribute('aria-label', 'Le modèle 3D de la casquette SIN n’a pas pu être chargé.');
-    }
-  );
-}
-
-function storyProgress(scroll) {
-  const start = story.offsetTop;
-  const distance = Math.max(1, story.offsetHeight - window.innerHeight);
-  return clamp((scroll - start) / distance, 0, 1);
-}
-
-function onLenisScroll({ scroll }) {
-  targetProgress = storyProgress(scroll);
-}
-
-function animate(time) {
-  requestAnimationFrame(animate);
-  const dt = Math.min(50, Math.max(1, time - lastFrame));
-  lastFrame = time;
-  if (window.sinLenis) window.sinLenis.raf(time);
-  if (reducedMotion) currentProgress = targetProgress;
-  else currentProgress += (targetProgress - currentProgress) * (1 - Math.exp(-dt / 42));
-  if (Math.abs(targetProgress - currentProgress) < 0.00015) currentProgress = targetProgress;
-  updateStory(currentProgress);
-  if (modelReady) renderer.render(scene, camera);
-}
-
-const lenis = window.Lenis ? new window.Lenis({
-  lerp: 0.12,
-  smoothWheel: true,
-  anchors: true,
-  respectReducedMotion: true,
-}) : null;
-if (lenis) {
-  window.sinLenis = lenis;
-  lenis.on('scroll', onLenisScroll);
-  onLenisScroll({ scroll: lenis.scroll });
-} else {
-  window.addEventListener('scroll', () => { targetProgress = storyProgress(window.scrollY); }, { passive: true });
-  targetProgress = storyProgress(window.scrollY);
-}
-window.addEventListener('resize', () => {
-  resize();
-  targetProgress = storyProgress(lenis ? lenis.scroll : window.scrollY);
-}, { passive: true });
-
-resize();
-loadCap();
-requestAnimationFrame(animate);
+addEventListener('scroll', requestDraw, { passive: true });
+addEventListener('resize', requestDraw);
+requestDraw();
