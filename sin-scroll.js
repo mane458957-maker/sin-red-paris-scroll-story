@@ -93,7 +93,7 @@ function draw() {
   const nextColor = colors[Math.min(left + 1, colors.length - 1)];
   // A tint on the cap silhouette keeps the studio background and red tab clean.
   wash.style.backgroundColor = mix < 0.5 ? currentColor.hex : nextColor.hex;
-  wash.style.opacity = String(colorsIn * colorsOut * (p > 0.57 ? 0.42 : 0));
+  wash.style.opacity = '0'; // Keep the actual white fabric untouched; show real color photos below.
 
   gallery.style.opacity = String(colorsIn * colorsOut * 0.92);
   gallery.style.transform = `translateY(${(1 - colorsIn) * 20}px)`;
