@@ -27,7 +27,7 @@
     .photo-frame{position:absolute;z-index:2;left:57%;top:53%;width:min(92vw,112vh,1100px);aspect-ratio:1;transform:translate(-50%,-50%);perspective:1500px;transform-style:preserve-3d;will-change:transform}
     .cap-photo{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;mix-blend-mode:multiply;backface-visibility:hidden;will-change:transform,opacity}
     .cap-front{opacity:1;z-index:1}
-    .cap-back{opacity:0;z-index:2}
+    .cap-back{opacity:0;z-index:2}.cap-color{opacity:0;z-index:3}
     .color-wash{position:absolute;z-index:3;inset:0;opacity:0;mix-blend-mode:multiply;clip-path:polygon(40% 31%,51% 32%,62% 37%,70% 44%,76% 52%,78% 59%,72% 63%,59% 66%,46% 69%,35% 67%,27% 64%,18% 62%,15% 58%,17% 53%,22% 46%,28% 39%,34% 35%);pointer-events:none;will-change:opacity,background-color}
     .tab-flight{position:absolute;z-index:4;left:13.8%;top:57.2%;width:25.45%;height:15.45%;object-fit:fill;opacity:0;mix-blend-mode:multiply;filter:drop-shadow(0 6px 7px #15141225);will-change:transform,opacity}
     .scroll-label{position:absolute;z-index:5;left:5vw;bottom:5vh;display:flex;align-items:center;gap:11px;color:#55514c;font-size:9px;letter-spacing:.18em;text-transform:uppercase}
@@ -63,7 +63,7 @@
     .end{position:relative;z-index:8;padding:80px 6vw 94px;background:#111;color:#f4f1ec;text-align:center}
     .end-kicker{color:#b9b3aa;font-size:9px;letter-spacing:.22em;text-transform:uppercase}
     .end h2{margin:17px auto 25px;font-size:clamp(42px,7vw,86px)}
-    .color-sheet{display:block;width:min(100%,1100px);height:auto;margin:35px auto 45px;mix-blend-mode:screen;opacity:.96}
+    .color-sheet{display:block;width:min(100%,1100px);height:auto;margin:35px auto 45px;mix-blend-mode:screen;opacity:.96}.color-grid{width:min(100%,1120px);margin:36px auto 42px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.color-grid figure{margin:0;text-align:left}.color-grid img{display:block;width:100%;aspect-ratio:1;object-fit:contain;background:#f3f1ec}.color-grid figcaption{padding:9px 2px;color:#bdb7af;font-size:9px;letter-spacing:.14em;text-transform:uppercase}
     .end-copy{margin:0 auto 26px;color:#c0bbb4;font-size:11px;letter-spacing:.12em;text-transform:uppercase}
     .cta{display:inline-flex;align-items:center;gap:22px;padding:16px 20px;background:var(--red);color:#fff;font-size:9px;letter-spacing:.16em;text-transform:uppercase;transition:transform .2s,background .2s}
     .cta:hover{transform:translateY(-2px);background:#ff3045}
@@ -85,11 +85,11 @@
       .color-gallery{left:20px;bottom:28vh;width:min(70vw,420px)}
       .palette{right:20px;bottom:calc(23vh + 20px);gap:6px}.palette i{width:12px;height:12px}
       .color-label{right:20px;bottom:23vh;font-size:8px}.scroll-label{left:20px;bottom:20px;font-size:8px}
-      .end{padding:60px 20px 68px}.color-sheet{margin:25px auto 34px}.footer{padding:16px 20px;flex-wrap:wrap}
+      .end{padding:60px 20px 68px}.color-sheet{margin:25px auto 34px}.color-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:25px auto 32px}.footer{padding:16px 20px;flex-wrap:wrap}
     }
     @media(prefers-reduced-motion:reduce){.scroll-label i{animation:none}.cta{transition:none}}
   </style>
-  <script type="module" src="sin-scroll.js?v=6"></script>
+  <script type="module" src="sin-scroll.js?v=7"></script>
 </head>
 <body>
   <div class="progress" aria-hidden="true"><span id="scroll-progress"></span></div>
@@ -101,24 +101,25 @@
         <div class="photo-frame" id="photo-frame">
           <img class="cap-photo cap-front" id="cap-front" src="assets/sin-cap-front.jpg" alt="Casquette SIN blanche vue de face">
           <img class="cap-photo cap-back" id="cap-back" src="assets/sin-cap-back.jpg" alt="Casquette SIN blanche vue de dos, avec sa languette rouge">
+          <img class="cap-photo cap-color" id="cap-color-a" alt="Casquette SIN dans un autre coloris">
+          <img class="cap-photo cap-color" id="cap-color-b" alt="Casquette SIN dans un autre coloris">
           <div class="color-wash" id="color-wash" aria-hidden="true"></div>
           <img class="tab-flight" id="tab-flight" src="assets/sin-tab-source.jpg" alt="">
         </div>
         <div class="stage-index" id="stage-index">SIN RED PARIS · 01 / 05</div>
         <div class="scroll-label" id="scroll-label">Fais défiler pour la révéler<i></i></div>
-        <div class="color-gallery" id="color-gallery"><img src="assets/sin-color-selector.jpg" alt="Les six coloris de casquettes SIN, tous avec la languette rouge"></div>
-        <div class="palette" id="palette" aria-label="Coloris"><i style="background:#f3f1ed"></i><i style="background:#85888d"></i><i style="background:#1947b8"></i><i style="background:#e6a8b8"></i><i style="background:#ef6228"></i><i style="background:#68152d"></i></div>
-        <div class="color-label" id="color-label">BLANC · 01 / 06</div>
+        <div class="palette" id="palette" aria-label="Onze coloris"><i style="background:#f3f1ed"></i><i style="background:#85888d"></i><i style="background:#1947b8"></i><i style="background:#e6a8b8"></i><i style="background:#ef6228"></i><i style="background:#68152d"></i><i style="background:#171717"></i><i style="background:#167969"></i><i style="background:#765039"></i><i style="background:#be182d"></i><i style="background:#dcbab1"></i></div>
+        <div class="color-label" id="color-label">BLANC · 01 / 11</div>
       </div>
       <div class="chapters">
         <article class="chapter chapter--left"><div class="copy"><div class="eyebrow">01 · La silhouette</div><h1>Une casquette.<br><em>Une signature.</em></h1><p>Le logo SIN ouvre le mouvement. Fais défiler pour voir la languette rouge prendre sa place.</p></div></article>
         <article class="chapter chapter--right"><div class="copy"><div class="eyebrow">02 · Le geste</div><h2>Le logo devient<br><em>languette.</em></h2><p>Trois lettres se resserrent. La signature se détache et descend vers la casquette.</p></div></article>
         <article class="chapter chapter--left"><div class="copy"><div class="eyebrow">03 · La signature</div><h2>Elle se pose<br><em>à l’arrière.</em></h2><p>La casquette pivote. La languette rouge rejoint son emplacement et révèle le détail qui relie tous les coloris.</p></div></article>
-        <article class="chapter chapter--right"><div class="copy"><div class="eyebrow">04 · Les coloris</div><h2>Six couleurs.<br><em>Toujours rouge.</em></h2><p>Blanc, gris, bleu, rose, orange ou bordeaux. La languette reste la même.</p><div class="palette-caption">Une signature · Six coloris</div></div></article>
+        <article class="chapter chapter--right"><div class="copy"><div class="eyebrow">04 · Les coloris</div><h2>Onze coloris.<br><em>Toujours rouge.</em></h2><p>Du blanc au vert, du bleu au bordeaux. La languette reste la même.</p><div class="palette-caption">Une signature · Onze coloris</div></div></article>
         <article class="chapter chapter--center"><div class="copy"><div class="eyebrow">05 · À toi de choisir</div><h2>Ta couleur.<br><em>Ton détail.</em></h2><p>Découvre la collection SIN Red Paris.</p></div></article>
       </div>
     </section>
-    <section class="end" id="collection"><div class="end-kicker">Six coloris · Une languette · SIN</div><h2>La signature<br><em>reste rouge.</em></h2><img class="color-sheet" src="assets/sin-color-selector.jpg" alt="Collection de six casquettes SIN : blanc, gris, bleu, rose, orange et bordeaux, chacune avec la languette rouge"><p class="end-copy">Une même signature, quelle que soit ta couleur.</p><a class="cta" href="https://sinredparis.com/collections/casquette">Découvrir les casquettes <span aria-hidden="true">↗</span></a></section>
+    <section class="end" id="collection"><div class="end-kicker">Onze coloris · Une languette · SIN</div><h2>La signature<br><em>reste rouge.</em></h2><div class="color-grid"><figure><img loading="lazy" src="assets/sin-cap-front.jpg" alt="Casquette SIN blanc avec sa languette rouge"><figcaption>blanc</figcaption></figure><figure><img loading="lazy" src="assets/colors/sin-grey.jpg" alt="Casquette SIN gris avec sa languette rouge"><figcaption>gris</figcaption></figure><figure><img loading="lazy" src="assets/colors/sin-blue.jpg" alt="Casquette SIN bleu avec sa languette rouge"><figcaption>bleu</figcaption></figure><figure><img loading="lazy" src="assets/colors/sin-pink.jpg" alt="Casquette SIN rose avec sa languette rouge"><figcaption>rose</figcaption></figure><figure><img loading="lazy" src="assets/colors/sin-nude-rose.jpg" alt="Casquette SIN nude rose avec sa languette rouge"><figcaption>nude rose</figcaption></figure><figure><img loading="lazy" src="assets/colors/sin-orange.jpg" alt="Casquette SIN orange avec sa languette rouge"><figcaption>orange</figcaption></figure><figure><img loading="lazy" src="assets/colors/sin-bordeaux.jpg" alt="Casquette SIN bordeaux avec sa languette rouge"><figcaption>bordeaux</figcaption></figure><figure><img loading="lazy" src="assets/colors/sin-red.jpg" alt="Casquette SIN rouge avec sa languette rouge"><figcaption>rouge</figcaption></figure><figure><img loading="lazy" src="assets/colors/sin-black.jpg" alt="Casquette SIN noir avec sa languette rouge"><figcaption>noir</figcaption></figure><figure><img loading="lazy" src="assets/colors/sin-green.jpg" alt="Casquette SIN vert avec sa languette rouge"><figcaption>vert</figcaption></figure><figure><img loading="lazy" src="assets/colors/sin-brown.jpg" alt="Casquette SIN marron avec sa languette rouge"><figcaption>marron</figcaption></figure></div><p class="end-copy">Une même signature, quelle que soit ta couleur.</p><a class="cta" href="https://sinredparis.com/collections/casquette">Découvrir les casquettes <span aria-hidden="true">↗</span></a></section>
   </main>
   <footer class="footer"><span>SIN RED PARIS</span><span>La casquette signature</span><span>© SIN RED PARIS</span></footer>
 </body>
