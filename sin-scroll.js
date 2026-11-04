@@ -73,8 +73,10 @@ let strapMaterial;
 let letterMeshes = [];
 
 function addFabricShader(material) {
-  material.transparent = true;
-  material.depthWrite = false;
+  // Keep the cap opaque. Enabling transparency for this single large mesh
+  // makes Three.js sort its overlapping fabric panels incorrectly.
+  material.transparent = false;
+  material.depthWrite = true;
   material.onBeforeCompile = (shader) => {
     shader.uniforms.sinCapTint = { value: new THREE.Color('#f3f1ed') };
     shader.uniforms.sinStrapOut = { value: 0 };
@@ -270,7 +272,9 @@ function updateStory(progress) {
       : progress < 0.80
         ? 3
         : 3 + smooth(0.80, 1, progress);
-  capRoot.rotation.y = turnToBack * Math.PI;
+  // The supplied GLB faces its rear toward the camera at zero rotation.
+  // Start on the front, turn around for the color reveal, then return to front.
+  capRoot.rotation.y = Math.PI + turnToBack * Math.PI;
   capRoot.rotation.x = Math.sin(progress * Math.PI * 2) * 0.025;
 
   const logoMove = smooth(0.48, 0.67, progress) * (1 - smooth(0.82, 0.99, progress));
