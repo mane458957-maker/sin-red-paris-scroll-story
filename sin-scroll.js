@@ -276,15 +276,16 @@ function updateStory(progress) {
   capRoot.rotation.y = turnToBack * Math.PI;
   capRoot.rotation.x = Math.sin(progress * Math.PI * 2) * 0.025;
 
-  const logoMove = smooth(0.48, 0.67, progress) * (1 - smooth(0.82, 0.99, progress));
-  capRoot.position.x = (window.innerWidth < 760 ? 0 : 0.34) + logoMove * (window.innerWidth < 760 ? 0.1 : 0.48);
+  const isMobile = window.innerWidth < 760;
+  const logoMove = smooth(0.48, 0.67, progress) * (1 - smooth(0.84, 0.95, progress));
+  capRoot.position.x = (isMobile ? 0 : 0.34) + logoMove * (isMobile ? 0.08 : 0.70);
   capRoot.position.y = -0.03 - logoMove * 0.04;
-  capRoot.scale.setScalar(baseScale * (1 - logoMove * 0.12));
+  capRoot.scale.setScalar(baseScale * (1 - logoMove * (isMobile ? 0.16 : 0.28)));
 
   const detach = smooth(0.42, 0.54, progress) * (1 - smooth(0.84, 0.95, progress));
   for (const shader of materialShaders) shader.uniforms.sinStrapOut.value = detach;
-  const logoForm = smooth(0.57, 0.66, progress) * (1 - smooth(0.80, 0.89, progress));
-  const strapVisible = clamp(detach * (1 - smooth(0.56, 0.64, progress)) + smooth(0.82, 0.91, progress) * (1 - smooth(0.96, 1, progress)), 0, 1);
+  const logoForm = smooth(0.57, 0.65, progress) * (1 - smooth(0.84, 0.92, progress));
+  const strapVisible = clamp(detach * (1 - smooth(0.56, 0.64, progress)) + smooth(0.84, 0.91, progress) * (1 - smooth(0.96, 1, progress)), 0, 1);
   if (strapGroup) {
     // Pull the red tab out from the back of the cap and sweep it toward the
     // signature. The parent cap is facing away here, so local +X travels left.
@@ -292,16 +293,16 @@ function updateStory(progress) {
     strapGroup.rotation.set(0.10 * detach, -0.18 * detach, -0.20 * detach);
     strapMaterial.opacity = strapVisible;
   }
-  letterRoot.position.x = (window.innerWidth < 760 ? -0.66 : -0.38) + logoMove * 0.05;
+  letterRoot.position.x = (isMobile ? -0.32 : -0.70) + logoMove * 0.05;
   letterRoot.position.z = 0.95 + logoForm * 0.08;
-  letterRoot.scale.setScalar(0.84 + logoForm * 0.05);
+  letterRoot.scale.setScalar((isMobile ? 0.48 : 0.62) + logoForm * 0.03);
   for (const mesh of letterMeshes) {
     const n = mesh.userData.order;
     const arrive = smooth(0.58 + n * 0.025, 0.64 + n * 0.025, progress);
-    mesh.material.opacity = arrive * (1 - smooth(0.80, 0.89, progress));
+    mesh.material.opacity = arrive * (1 - smooth(0.84, 0.92, progress));
   }
 
-  const chapter = Math.min(4, Math.floor(progress * 5));
+  const chapter = Math.min(4, Math.round(progress * 4));
   stageMark.textContent = `SIN RED PARIS · 0${chapter + 1} / 05`;
   sequenceDots.forEach((dot, index) => dot.classList.toggle('active', index === chapter));
   progressBar.style.transform = `scaleX(${progress.toFixed(4)})`;
