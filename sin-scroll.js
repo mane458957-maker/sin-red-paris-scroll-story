@@ -272,9 +272,8 @@ function updateStory(progress) {
       : progress < 0.80
         ? 3
         : 3 + smooth(0.80, 1, progress);
-  // The supplied GLB faces its rear toward the camera at zero rotation.
   // Start on the front, turn around for the color reveal, then return to front.
-  capRoot.rotation.y = Math.PI + turnToBack * Math.PI;
+  capRoot.rotation.y = turnToBack * Math.PI;
   capRoot.rotation.x = Math.sin(progress * Math.PI * 2) * 0.025;
 
   const logoMove = smooth(0.48, 0.67, progress) * (1 - smooth(0.82, 0.99, progress));
