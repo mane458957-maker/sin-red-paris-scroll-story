@@ -7,6 +7,7 @@ const smooth = (a, b, value) => {
 
 const story = $('.story');
 const frame = $('#photo-frame');
+const spin = $('#cap-spin');
 const front = $('#cap-front');
 const back = $('#cap-back');
 const logo = $('#hero-signature');
@@ -74,10 +75,12 @@ function draw() {
   const colorsIn = smooth(0.54, 0.62, p);
   const colorsOut = 1 - smooth(0.94, 0.995, p);
 
-  front.style.opacity = String((1 - reveal) * (1 - colorsIn));
-  front.style.transform = `rotateY(${-turn * 74}deg) scale(${1 - turn * 0.04})`;
-  back.style.opacity = String(reveal * (1 - colorsIn));
-  back.style.transform = `rotateY(${(1 - turn) * 74}deg) scale(${0.96 + turn * 0.04})`;
+  const halfTurn = smooth(0.08, 0.48, p);
+  const returnTurn = smooth(0.48, 0.61, p);
+  const spinDegrees = p < 0.48 ? 180 * halfTurn : 180 + 180 * returnTurn;
+  spin.style.transform = `rotateY(${spinDegrees}deg)`;
+  front.style.opacity = '1';
+  back.style.opacity = '1';
   frame.style.transform = `translate(-50%,-50%) translateY(${Math.sin(p * Math.PI) * -12}px) scale(${1 + turn * 0.025})`;
 
   logo.style.opacity = String(1 - smooth(0.19, 0.35, p));
